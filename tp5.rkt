@@ -50,51 +50,96 @@
 
     ))
 
+;(if (eq? (caddr x) 0) the-empty-stream ...)
 (define (bill-all stream-of-reports month)
-  (map (lambda (x) (bill-one stream-of-reports month x))
 
+  (define tasks-this-month (filter-stream (lambda (g) (equal? month (report-month g))) stream-of-reports))
+
+  (if (empty-stream? tasks-this-month) the-empty-stream
+  
+  (map-stream (lambda (x) (bill-one stream-of-reports month x))
+              
    (accumulate-stream
    (lambda (report acc)
-     (if (member (report-company report) acc) acc (cons (report-company report) acc))
+     (if (and (not (member (report-company report) acc)) (equal? month (report-month report))) (cons (report-company report) acc) acc)
      )
    '()
    stream-of-reports)
+  ))
   )
+
+
+(define (reorganize stream-of-reports)
+  (cons-stream (head stream-of-reports)
+               (reorganize (filter-stream (lambda (x) (equal? (report-company (head stream-of-reports)) (report-company x)))
+                                         (tail stream-of-reports)))
+              )
   )
 
+(define (total-bill stream-of-reports fill-criteria?)
+  (define filtre (filter-stream fill-criteria? stream-of-reports))
 
-(define (reorganize stream-of-reports) 4)
+  (accumulate-stream
+   (lambda (report acc)
+     (if (or (eq? (report-company-type report) 'EDUCATION) (eq? (report-company-type report) 'OBNL)) acc
+      (+ acc (cout (report-CPU report)
+                  (report-memory report)
+                  1)))
+     )
+   0
+   filtre)
+  )
 
-(define (total-bill stream-of-reports fill-criteria?) 3)
+(define (total-bill-for stream-of-reports month)
+  (total-bill stream-of-reports (lambda (x) (eq? month (report-month x)) ))
+  
+  )
 
-(define (total-bill-for stream-of-reports month) 3)
+(define (CPU-load-stream workers-states-stream w-id) 6)
 
-(define (CPU-load-stream workers-states-stream w-id) 3)
+(define (memory-load-stream workers-states-stream w-id) 7)
 
-(define (memory-load-stream workers-states-stream w-id) 3)
+(define (total-load-stream workers-states-stream w-id) 8)
 
-(define (total-load-stream workers-states-stream w-id) 3)
+(define (stream-of-smoothed-total-loads workers-state-stream w-id) 9)
 
-(define (stream-of-smoothed-total-loads workers-state-stream w-id) 3)
-
-(define (stream-of-overload-periods stream-of-states w-id overload?) 3)
+(define (stream-of-overload-periods stream-of-states w-id overload?) 10)
 
 
 
-   (equal? (bill-one the-stream-of-reports 'janvier 'Google) '(janvier Google 753))
-   (equal? (bill-one the-stream-of-reports 'janvier 'APPLE) '(janvier APPLE 1251))
-   (equal? (bill-one the-stream-of-reports 'janvier 'IXIA) '(janvier IXIA 0))
-   (equal? (bill-one the-stream-of-reports 'janvier 'UdeS) '(janvier UdeS 0))
-   (equal? (bill-one the-stream-of-reports 'janvier 'Microsoft) '(janvier Microsoft 0))
-   (equal? (bill-one the-stream-of-reports 'février 'Google) '(février Google 501))
-   (equal? (bill-one the-stream-of-reports 'février 'APPLE) '(février APPLE 12501))
-   (equal? (bill-one the-stream-of-reports 'février 'IXIA) '(février IXIA 0))
-   (equal? (bill-one the-stream-of-reports 'février 'UdeS) '(février UdeS 0))
-   (equal? (bill-one the-stream-of-reports 'février 'Microsoft) '(février Microsoft 16251))
-   (equal? (bill-one the-stream-of-reports 'mars 'Google) '(mars Google 0))
-(bill-all the-stream-of-reports 'janvier)
-(bill-all the-stream-of-reports 'février)
-(bill-all the-stream-of-reports 'mars)
+   ;(equal? (bill-one the-stream-of-reports 'janvier 'Google) '(janvier Google 753))
+   ;(equal? (bill-one the-stream-of-reports 'janvier 'APPLE) '(janvier APPLE 1251))
+   ;(equal? (bill-one the-stream-of-reports 'janvier 'IXIA) '(janvier IXIA 0))
+   ;(equal? (bill-one the-stream-of-reports 'janvier 'UdeS) '(janvier UdeS 0))
+   ;(equal? (bill-one the-stream-of-reports 'janvier 'Microsoft) '(janvier Microsoft 0))
+   ;(equal? (bill-one the-stream-of-reports 'février 'Google) '(février Google 501))
+   ;(equal? (bill-one the-stream-of-reports 'février 'APPLE) '(février APPLE 12501))
+   ;(equal? (bill-one the-stream-of-reports 'février 'IXIA) '(février IXIA 0))
+   ;(equal? (bill-one the-stream-of-reports 'février 'UdeS) '(février UdeS 0))
+   ;(equal? (bill-one the-stream-of-reports 'février 'Microsoft) '(février Microsoft 16251))
+   ;(equal? (bill-one the-stream-of-reports 'mars 'Google) '(mars Google 0))
+;(define (member-stream? element stream)
+  ;(and (not (empty-stream? stream))
+       ;(or (equal? element (head stream))
+           ;(member-stream? element (tail stream)))))
+
+
+;(define bills-janvier (bill-all the-stream-of-reports 'janvier))
+;(define bills-février (bill-all the-stream-of-reports 'février))
+;(define bills-mars (bill-all the-stream-of-reports 'mars))
+;(eq? (length-stream bills-janvier) 4)
+;(eq? (length-stream bills-février) 5)
+;(empty-stream? (bill-all the-stream-of-reports 'mars))
+;(member-stream? (bill-one the-stream-of-reports 'janvier 'Google) bills-janvier)
+;(member-stream? (bill-one the-stream-of-reports 'janvier 'APPLE) bills-janvier)
+;(member-stream? (bill-one the-stream-of-reports 'janvier 'IXIA) bills-janvier)
+;(member-stream? (bill-one the-stream-of-reports 'janvier 'UdeS) bills-janvier)
+     
+;(member-stream? (bill-one the-stream-of-reports 'février 'Google) bills-février)
+;(member-stream? (bill-one the-stream-of-reports 'février 'APPLE)bills-février)
+;(member-stream? (bill-one the-stream-of-reports 'février 'IXIA) bills-février)
+;(member-stream? (bill-one the-stream-of-reports 'février 'UdeS) bills-février)
+;(member-stream? (bill-one the-stream-of-reports 'février 'Microsoft) bills-février)
 
 ;(make-task-report 'janvier 'W-1 'ts-1 10 5 'Google 'CORPORATIF)
                               ;(make-task-report 'janvier 'W-2 'ts-2 20 10 'Google 'CORPORATIF)
@@ -107,5 +152,24 @@
                               ;(make-task-report 'janvier 'W-1 'ts-1 100 50 'APPLE 'CORPORATIF)
                               ;(make-task-report 'février 'W-2 'ts-1 1000 500 'APPLE 'CORPORATIF)
                               ;(make-task-report 'février 'W-3 'ts-1 1500 250 'Microsoft 'CORPORATIF)
+;(eq? (total-bill the-stream-of-reports (lambda(report) (eq? (report-company report) 'Google))) 1254)
+;(eq? (total-bill the-stream-of-reports (lambda(report) (eq? (report-company report) 'APPLE))) 13752)
+;(eq? (total-bill the-stream-of-reports (lambda(report) (eq? (report-company report) 'IXIA))) 0)
+;(eq? (total-bill the-stream-of-reports (lambda(report) (eq? (report-company report) 'UdeS))) 0)
+;(eq? (total-bill the-stream-of-reports (lambda(report) (eq? (report-company report) 'Microsoft))) 16251)
+
+
+;(foldr + 0 (map (lambda(m) (total-bill-for the-stream-of-reports m))
+                        ;'(janvier février mars)))
+;(foldr + 0 (map (lambda(cie) (total-bill the-stream-of-reports (lambda(report) (eq? (report-company report) cie))))
+                          ;'(Google APPLE IXIA UdeS Microsoft)))
+
+
+;(eq?
+; (foldr + 0 (map (lambda(m) (total-bill-for the-stream-of-reports m))
+;                        '(janvier février mars)))   
+;       (foldr + 0 (map (lambda(cie) (total-bill the-stream-of-reports (lambda(report) (eq? (report-company report) cie))))
+;                          '(Google APPLE IXIA UdeS Microsoft))))
+
 
 ; Month Worker-id Task-id CPU Memory Company CompanyType
