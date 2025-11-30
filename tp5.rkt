@@ -15,6 +15,8 @@
 ; ***************** IFT359 / TP5
 ; ***************** Gagnon-Simard, Olivier (24096336)
 
+
+; Partie 1 : Les flots finis
 (define (cout CPU mem nbTaches) (+ (* 10 CPU) (+ (* 5 mem) nbTaches)))
 
 (define (bill-one stream-of-reports month company)
@@ -50,7 +52,6 @@
 
     ))
 
-;(if (eq? (caddr x) 0) the-empty-stream ...)
 (define (bill-all stream-of-reports month)
 
   (define tasks-this-month (filter-stream (lambda (g) (equal? month (report-month g))) stream-of-reports))
@@ -90,12 +91,21 @@
    filtre)
   )
 
+; Partie 2 : Les flots infinis
+
+; Fonctions utilitaires
+(define (charge-CPU worker) (state-n-waiting worker))
+(define (charge-Mem worker) (+ (state-n-waiting worker) (state-n-history worker)))
+(define (charge-Totale worker) (+ (* 2 (state-n-waiting worker)) (state-n-history worker)))
+
 (define (total-bill-for stream-of-reports month)
   (total-bill stream-of-reports (lambda (x) (eq? month (report-month x)) ))
   
   )
 
-(define (CPU-load-stream workers-states-stream w-id) 6)
+(define (CPU-load-stream workers-states-stream w-id)
+  3
+  )
 
 (define (memory-load-stream workers-states-stream w-id) 7)
 
