@@ -91,6 +91,11 @@
    filtre)
   )
 
+(define (total-bill-for stream-of-reports month)
+  (total-bill stream-of-reports (lambda (x) (eq? month (report-month x)) ))
+ 
+  )
+
 ; Partie 2 : Les flots infinis
 
 ; Fonctions utilitaires
@@ -98,13 +103,15 @@
 (define (charge-Mem worker) (+ (state-n-waiting worker) (state-n-history worker)))
 (define (charge-Totale worker) (+ (* 2 (state-n-waiting worker)) (state-n-history worker)))
 
-(define (total-bill-for stream-of-reports month)
-  (total-bill stream-of-reports (lambda (x) (eq? month (report-month x)) ))
-  
-  )
-
 (define (CPU-load-stream workers-states-stream w-id)
-  3
+  (map-stream
+   charge-CPU
+   (filter-stream (lambda (worker)
+                    (eq? w-id (state-w-id worker))
+                    )
+                  workers-states-stream)
+
+   )
   )
 
 (define (memory-load-stream workers-states-stream w-id) 7)
