@@ -114,11 +114,44 @@
    )
   )
 
-(define (memory-load-stream workers-states-stream w-id) 7)
+(define (memory-load-stream workers-states-stream w-id)
+  (map-stream
+   charge-Mem
+   (filter-stream (lambda (worker)
+                    (eq? w-id (state-w-id worker))
+                    )
+                  workers-states-stream)
 
-(define (total-load-stream workers-states-stream w-id) 8)
+   )
+  )
 
-(define (stream-of-smoothed-total-loads workers-state-stream w-id) 9)
+(define (total-load-stream workers-states-stream w-id)
+  (map-stream
+   charge-Totale
+   (filter-stream (lambda (worker)
+                    (eq? w-id (state-w-id worker))
+                    )
+                  workers-states-stream)
+   
+   )
+  )
+
+(define (stream-of-smoothed-total-loads workers-state-stream w-id)
+  (define totalStream (total-load-stream workers-state-stream w-id))
+
+
+  (define (gen prev2 prev1 stream)
+    (let* (
+           [ctn (head stream)]
+           [next (+ (* 0.15 prev2) (* 0.35 prev1 ) (* 0.5 ctn ) )]
+           )
+      (cons-stream
+       next
+       (gen prev1 next (tail stream)))))
+
+
+  (cons-stream 0 (cons-stream 0 (gen 0 0 totalStream)))
+  )
 
 (define (stream-of-overload-periods stream-of-states w-id overload?) 10)
 
@@ -188,5 +221,9 @@
 ;       (foldr + 0 (map (lambda(cie) (total-bill the-stream-of-reports (lambda(report) (eq? (report-company report) cie))))
 ;                          '(Google APPLE IXIA UdeS Microsoft))))
 
+;(define smoothed-loads-stream-w-0 (stream-of-smoothed-total-loads the-stream-of-workers-states 0))
+;(define smoothed-loads-stream-w-1 (stream-of-smoothed-total-loads the-stream-of-workers-states 1))
+;(stream->list 10 smoothed-loads-stream-w-0)
+;(stream->list 10 smoothed-loads-stream-w-1)
 
 ; Month Worker-id Task-id CPU Memory Company CompanyType
