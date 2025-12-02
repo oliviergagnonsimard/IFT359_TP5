@@ -69,13 +69,23 @@
   ))
   )
 
-
+; --- test facturation complexe, les autres c'est test facturation normal
 (define (reorganize stream-of-reports)
-  (cons-stream (head stream-of-reports)
-               (reorganize (filter-stream (lambda (x) (equal? (report-company (head stream-of-reports)) (report-company x)))
-                                         (tail stream-of-reports)))
-              )
-  )
+  (if (empty-stream? stream-of-reports)
+      the-empty-stream
+      
+      (let* ((first-report (head stream-of-reports))
+             (current-company (report-company first-report)))
+        
+        (cons-stream
+          ;; on fait le sous flot de la compagny actuelle definie plus haut
+          (filter-stream (lambda (x) (equal? (report-company x) current-company))
+                         stream-of-reports)
+          
+          ;; on fait les autres sous flots du reste des reports autres que la company actuelle
+          (reorganize (filter-stream (lambda (x) 
+                                       (not (equal? (report-company x) current-company)))
+                                     stream-of-reports))))))
 
 (define (total-bill stream-of-reports fill-criteria?)
   (define filtre (filter-stream fill-criteria? stream-of-reports))
@@ -153,7 +163,68 @@
   (cons-stream 0 (cons-stream 0 (gen 0 0 totalStream)))
   )
 
-(define (stream-of-overload-periods stream-of-states w-id overload?) 10)
+(define (stream-of-overload-periods stream-of-states w-id overload?)
+  ; pour les debuts de surcharge
+  (define debuts
+    (filter-stream* (lambda (s1 s2) 
+                      (and (not (overload? s1)) 
+                         (overload? s2)))
+                    stream-of-states 
+                    (tail stream-of-states)))
+  
+  
+  
+  
+  
+  ;pour les fins de surcharge
+  (define fins 
+    (filter-stream* (lambda (s1 s2)
+                      (and (overload? s1) (not (overload? s2)))
+                      )
+                    stream-of-states
+                  (tail stream-of-states)))
+
+  
+  (define (time state)
+    (cadr state))
+
+  
+  ; on prend juste la donnée de temps des débuts
+  (define t-debuts
+    (map-stream (lambda (s-pair) (+ (time (cadr s-pair)) 1)) 
+                debuts))
+
+
+
+
+
+
+
+
+  
+  ; on prend juste la donnée de temps des fins
+  ; faut enlever 1 jpense lors du calcul à une place quand on fait les fins pk y sont décalés (théorie) => check demain
+  (define t-fins
+    (map-stream (lambda (s-pair) 
+                  (let ((etatSurcharge (car s-pair))) 
+                    (let ((temps (time etatSurcharge))
+                          (id (car etatSurcharge))) 
+                      
+                      ; Y faut faire -1 quand c'est le worker-id 1 et le laisser normal quand c'est le 0
+                      (if (= id 1)
+                          (- temps 1) 
+                          temps)
+                      ))
+                )
+                fins))
+
+
+  
+  
+  (map-stream* cons t-debuts t-fins)
+  ;(map-stream* cons debuts fins)
+  ;fins
+ )
 
 
 
@@ -225,5 +296,10 @@
 ;(define smoothed-loads-stream-w-1 (stream-of-smoothed-total-loads the-stream-of-workers-states 1))
 ;(stream->list 10 smoothed-loads-stream-w-0)
 ;(stream->list 10 smoothed-loads-stream-w-1)
+
+;(define stream-of-overload-periods-w1 (stream->list 6 (stream-of-overload-periods the-stream-of-workers-states 0 (lambda(state) (> (charge-Totale state) 300)))))
+;stream-of-overload-periods-w1
+;(equal? (stream->list 6 stream-of-overload-periods-w1)
+;'((52 . 98) (118 . 174) (252 . 298) (318 . 374) (452 . 498) (518 . 574)))
 
 ; Month Worker-id Task-id CPU Memory Company CompanyType
